@@ -1,11 +1,8 @@
 const express = require('express');
+const paises = require('./controller/paises');
 
 const rotas = express();
 
-const e = (req, res) => {
-  res.send('Aqui foi :)');
-};
-
-rotas.get('/', e);
+rotas.get('/paises', paises.obterPaises);
 
 module.exports = rotas;
