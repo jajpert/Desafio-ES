@@ -12,5 +12,6 @@ CREATE TABLE instituicao (
   estado VARCHAR(32) NOT NULL,
   municipio VARCHAR(50) NOT NULL,
   numero INT,
-  complemento VARCHAR(32)
+  complemento VARCHAR(32),
+  ativo BOOLEAN
 );
