@@ -1,19 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
-import { usePaises } from "../hooks/usePaises";
-import { useEndereco } from "../hooks/useEndereco";
+import React, { useState, useRef } from "react";
 import { JsonForms } from "@jsonforms/react";
 import {
   materialRenderers,
   materialCells,
 } from "@jsonforms/material-renderers";
+import { useEndereco } from "../hooks/useEndereco"; // Atualize o caminho conforme necessário
+import { usePaises } from "../hooks/usePaises"; // Atualize o caminho conforme necessário
+
+interface PaisOption {
+  label: string;
+  value: string;
+}
 
 const EnderecoForm: React.FC = () => {
-  const {
-    data: paises,
-    isLoading: isPaisesLoading,
-    isError: isPaisesError,
-  } = usePaises();
-
   const [cep, setCep] = useState<string>("");
   const [formData, setFormData] = useState({
     cep: "",
@@ -25,18 +24,16 @@ const EnderecoForm: React.FC = () => {
     bairro: "",
     complemento: "",
   });
-  const [fetchAddress, setFetchAddress] = useState(false);
   const cepRef = useRef<HTMLInputElement>(null);
 
-  // UseEffect para chamar useEndereco quando o CEP está completo e outro campo é alterado
-  const {
-    data: enderecoData,
-    isLoading: isEnderecoLoading,
-    isError: isEnderecoError,
-    refetch,
-  } = useEndereco(cep.length === 8 && fetchAddress ? cep : "");
+  // Usando o hook para buscar o endereço
+  const { data: enderecoData, refetch: refetchEndereco } = useEndereco(cep);
 
-  useEffect(() => {
+  // Usando o hook para buscar os países
+  const { data: paisesData } = usePaises();
+
+  // Atualiza o formData com os dados do endereço
+  React.useEffect(() => {
     if (enderecoData) {
       setFormData((prevData) => ({
         ...prevData,
@@ -48,52 +45,42 @@ const EnderecoForm: React.FC = () => {
     }
   }, [enderecoData]);
 
-  useEffect(() => {
+  // Atualiza as opções de países
+  const paisOptions: PaisOption[] = paisesData
+    ? paisesData.map((pais) => ({
+        label: pais,
+        value: pais,
+      }))
+    : [];
+
+  // Função para lidar com cliques fora do campo cep
+  React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (cepRef.current && !cepRef.current.contains(event.target as Node)) {
         if (cep.length === 8) {
-          setFetchAddress(true); // Dispara a requisição
+          refetchEndereco(); // Dispara a requisição se o CEP estiver completo
+          console.log("Clicou fora do campo CEP, disparando requisição");
         }
       }
     };
 
-    // Adiciona event listener para cliques fora do campo
     document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [cep]);
-
-  useEffect(() => {
-    if (fetchAddress) {
-      refetch(); // Chama a requisição para buscar o endereço
-      setFetchAddress(false); // Reseta o estado para não fazer a requisição novamente sem necessidade
-    }
-  }, [fetchAddress, refetch]);
+  }, [cep, refetchEndereco]);
 
   const handleChangeCep = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newCep = event.target.value;
     if (newCep.length <= 8) {
       setCep(newCep);
-      setFetchAddress(false); // Não dispara a requisição enquanto o usuário está digitando
     }
   };
 
   const handleFormChange = ({ data }: any) => {
     setFormData(data);
   };
-
-  if (isPaisesLoading) return <div>Loading...</div>;
-  if (isPaisesError) return <div>Error loading countries</div>;
-  if (isEnderecoLoading) return <div>Loading address...</div>;
-  if (isEnderecoError) return <div>Error loading address</div>;
-
-  const paisOptions =
-    paises?.map((pais: string) => ({
-      label: pais,
-      value: pais,
-    })) || [];
 
   const formSchema = {
     type: "object",
@@ -102,11 +89,14 @@ const EnderecoForm: React.FC = () => {
       estado: { type: "string", title: "Estado" },
       logradouro: { type: "string", title: "Logradouro" },
       numero: { type: "string", title: "Número" },
-      pais: {
-        type: "string",
-        title: "País",
-        enum: paisOptions.map((p) => p.value),
-      },
+      pais:
+        paisOptions.length > 0
+          ? {
+              type: "string",
+              title: "País",
+              enum: paisOptions.map((p) => p.value),
+            }
+          : { type: "string", title: "País" },
       municipio: { type: "string", title: "Município" },
       bairro: { type: "string", title: "Bairro" },
       complemento: { type: "string", title: "Complemento" },
@@ -143,8 +133,9 @@ const EnderecoForm: React.FC = () => {
         type: "Control",
         scope: "#/properties/pais",
         options: {
-          "ui:widget": "select",
-          "ui:options": { enumOptions: paisOptions },
+          "ui:widget": paisOptions.length > 0 ? "select" : "text",
+          "ui:options":
+            paisOptions.length > 0 ? { enumOptions: paisOptions } : {},
         },
       },
       {
@@ -166,14 +157,19 @@ const EnderecoForm: React.FC = () => {
   };
 
   return (
-    <JsonForms
-      schema={formSchema}
-      uischema={formUiSchema}
-      data={formData}
-      onChange={handleFormChange}
-      renderers={materialRenderers}
-      cells={materialCells}
-    />
+    <div>
+      <label>CEP</label>
+      <input type="text" value={cep} onChange={handleChangeCep} ref={cepRef} />
+
+      <JsonForms
+        schema={formSchema}
+        uischema={formUiSchema}
+        data={formData}
+        onChange={handleFormChange}
+        renderers={materialRenderers}
+        cells={materialCells}
+      />
+    </div>
   );
 };
 

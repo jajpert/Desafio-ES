@@ -1,4 +1,4 @@
-const knex = require('../conexao');
+const knex = require('../db');
 const validarCNPJ = require('../utils/validaCnpj');
 
 const cadastrarInst = async (req, res) => {
