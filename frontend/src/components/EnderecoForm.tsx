@@ -1,18 +1,26 @@
-import React, { useState, useRef } from "react";
-import { JsonForms } from "@jsonforms/react";
+import React, { useState, useRef, useEffect } from "react";
 import {
-  materialRenderers,
-  materialCells,
-} from "@jsonforms/material-renderers";
-import { useEndereco } from "../hooks/useEndereco"; // Atualize o caminho conforme necessário
-import { usePaises } from "../hooks/usePaises"; // Atualize o caminho conforme necessário
+  TextField,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Box,
+  SelectChangeEvent,
+} from "@mui/material";
+import { useEndereco } from "../hooks/useEndereco";
+import { usePaises } from "../hooks/usePaises";
 
 interface PaisOption {
   label: string;
   value: string;
 }
 
-const EnderecoForm: React.FC = () => {
+interface EnderecoFormProps {
+  onDataChange: (data: any) => void;
+}
+
+const EnderecoForm: React.FC<EnderecoFormProps> = ({ onDataChange }) => {
   const [cep, setCep] = useState<string>("");
   const [formData, setFormData] = useState({
     cep: "",
@@ -24,52 +32,37 @@ const EnderecoForm: React.FC = () => {
     bairro: "",
     complemento: "",
   });
+  const [paisOptions, setPaisOptions] = useState<PaisOption[]>([]);
   const cepRef = useRef<HTMLInputElement>(null);
 
-  // Usando o hook para buscar o endereço
-  const { data: enderecoData, refetch: refetchEndereco } = useEndereco(cep);
-
-  // Usando o hook para buscar os países
+  const { data: enderecoData } = useEndereco(cep);
   const { data: paisesData } = usePaises();
 
-  // Atualiza o formData com os dados do endereço
-  React.useEffect(() => {
+  useEffect(() => {
+    if (paisesData && paisesData.length > 0) {
+      const options = paisesData.map((pais) => ({
+        label: pais,
+        value: pais,
+      }));
+      setPaisOptions(options);
+    }
+  }, [paisesData]);
+
+  useEffect(() => {
     if (enderecoData) {
-      setFormData((prevData) => ({
-        ...prevData,
+      const newData = {
         logradouro: enderecoData.logradouro || "",
         bairro: enderecoData.bairro || "",
         estado: enderecoData.estado || "",
         municipio: enderecoData.municipio || "",
-      }));
+      };
+      setFormData((prevData) => {
+        const updatedData = { ...prevData, ...newData };
+        onDataChange(updatedData);
+        return updatedData;
+      });
     }
-  }, [enderecoData]);
-
-  // Atualiza as opções de países
-  const paisOptions: PaisOption[] = paisesData
-    ? paisesData.map((pais) => ({
-        label: pais,
-        value: pais,
-      }))
-    : [];
-
-  // Função para lidar com cliques fora do campo cep
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (cepRef.current && !cepRef.current.contains(event.target as Node)) {
-        if (cep.length === 8) {
-          refetchEndereco(); // Dispara a requisição se o CEP estiver completo
-          console.log("Clicou fora do campo CEP, disparando requisição");
-        }
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [cep, refetchEndereco]);
+  }, [enderecoData, onDataChange]);
 
   const handleChangeCep = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newCep = event.target.value;
@@ -78,98 +71,123 @@ const EnderecoForm: React.FC = () => {
     }
   };
 
-  const handleFormChange = ({ data }: any) => {
-    setFormData(data);
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((prevData) => {
+      const updatedData = { ...prevData, [name]: value };
+      onDataChange(updatedData);
+      return updatedData;
+    });
   };
 
-  const formSchema = {
-    type: "object",
-    properties: {
-      cep: { type: "string", title: "CEP" },
-      estado: { type: "string", title: "Estado" },
-      logradouro: { type: "string", title: "Logradouro" },
-      numero: { type: "string", title: "Número" },
-      pais:
-        paisOptions.length > 0
-          ? {
-              type: "string",
-              title: "País",
-              enum: paisOptions.map((p) => p.value),
-            }
-          : { type: "string", title: "País" },
-      municipio: { type: "string", title: "Município" },
-      bairro: { type: "string", title: "Bairro" },
-      complemento: { type: "string", title: "Complemento" },
-    },
-    required: ["cep", "estado", "logradouro", "numero", "pais"],
-  };
-
-  const formUiSchema = {
-    type: "VerticalLayout",
-    elements: [
-      {
-        type: "Control",
-        scope: "#/properties/cep",
-        options: { "ui:widget": "text" },
-        onChange: handleChangeCep,
-        ref: cepRef,
-      },
-      {
-        type: "Control",
-        scope: "#/properties/estado",
-        options: { "ui:widget": "text" },
-      },
-      {
-        type: "Control",
-        scope: "#/properties/logradouro",
-        options: { "ui:widget": "text" },
-      },
-      {
-        type: "Control",
-        scope: "#/properties/numero",
-        options: { "ui:widget": "text" },
-      },
-      {
-        type: "Control",
-        scope: "#/properties/pais",
-        options: {
-          "ui:widget": paisOptions.length > 0 ? "select" : "text",
-          "ui:options":
-            paisOptions.length > 0 ? { enumOptions: paisOptions } : {},
-        },
-      },
-      {
-        type: "Control",
-        scope: "#/properties/municipio",
-        options: { "ui:widget": "text" },
-      },
-      {
-        type: "Control",
-        scope: "#/properties/bairro",
-        options: { "ui:widget": "text" },
-      },
-      {
-        type: "Control",
-        scope: "#/properties/complemento",
-        options: { "ui:widget": "text" },
-      },
-    ],
+  const handleSelectChange = (event: SelectChangeEvent<string>) => {
+    const { name, value } = event.target;
+    setFormData((prevData) => {
+      const updatedData = { ...prevData, [name]: value };
+      onDataChange(updatedData);
+      return updatedData;
+    });
   };
 
   return (
-    <div>
-      <label>CEP</label>
-      <input type="text" value={cep} onChange={handleChangeCep} ref={cepRef} />
-
-      <JsonForms
-        schema={formSchema}
-        uischema={formUiSchema}
-        data={formData}
-        onChange={handleFormChange}
-        renderers={materialRenderers}
-        cells={materialCells}
+    <Box
+      sx={{ display: "flex", flexDirection: "column", gap: 2, width: "80%" }}
+    >
+      <TextField
+        label="CEP"
+        name="cep"
+        variant="outlined"
+        value={cep}
+        onChange={handleChangeCep}
+        inputRef={cepRef}
+        fullWidth
+        InputProps={{
+          sx: { height: 40, padding: "0 14px" },
+        }}
       />
-    </div>
+      <TextField
+        label="Logradouro"
+        name="logradouro"
+        variant="outlined"
+        value={formData.logradouro}
+        onChange={handleInputChange}
+        fullWidth
+        InputProps={{
+          sx: { height: 40, padding: "0 14px" },
+        }}
+      />
+      <TextField
+        label="Bairro"
+        name="bairro"
+        variant="outlined"
+        value={formData.bairro}
+        onChange={handleInputChange}
+        fullWidth
+        InputProps={{
+          sx: { height: 40, padding: "0 14px" },
+        }}
+      />
+      <TextField
+        label="Estado"
+        name="estado"
+        variant="outlined"
+        value={formData.estado}
+        onChange={handleInputChange}
+        fullWidth
+        InputProps={{
+          sx: { height: 40, padding: "0 14px" },
+        }}
+      />
+      <TextField
+        label="Município"
+        name="municipio"
+        variant="outlined"
+        value={formData.municipio}
+        onChange={handleInputChange}
+        fullWidth
+        InputProps={{
+          sx: { height: 40, padding: "0 14px" },
+        }}
+      />
+      <TextField
+        label="Número"
+        name="numero"
+        variant="outlined"
+        value={formData.numero}
+        onChange={handleInputChange}
+        fullWidth
+        InputProps={{
+          sx: { height: 40, padding: "0 14px" },
+        }}
+      />
+      <FormControl fullWidth>
+        <InputLabel>País</InputLabel>
+        <Select
+          label="País"
+          name="pais"
+          value={formData.pais}
+          onChange={handleSelectChange}
+          sx={{ height: 40 }} // Altura diminuída pela metade
+        >
+          {paisOptions.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <TextField
+        label="Complemento"
+        name="complemento"
+        variant="outlined"
+        value={formData.complemento}
+        onChange={handleInputChange}
+        fullWidth
+        InputProps={{
+          sx: { height: 40, padding: "0 14px" },
+        }}
+      />
+    </Box>
   );
 };
 

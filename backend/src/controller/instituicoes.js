@@ -68,7 +68,7 @@ const cadastrarInst = async (req, res) => {
 
         } else {
             const instituicao = await knex("instituicao")
-			.insert({nome, sigla, pais, cep, logradouro, estado, municipio, complemento})
+			.insert({nome, sigla, pais, cep, logradouro, estado, municipio, complemento, ativo: true})
 			.returning("*");
 
             if (!instituicao) {

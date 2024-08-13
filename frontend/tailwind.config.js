@@ -14,11 +14,10 @@ export default {
     extend: {
       colors: {
         dark: '#28282B',
-      },
+      }
     },
   },
   // plugins: [require("tailwindcss-radix")({
   //   variantPrefix: "rdx"
   // })],
 }
-

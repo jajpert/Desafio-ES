@@ -3,7 +3,6 @@ import axios from "axios";
 
 const fetchEndereco = async (cep: string) => {
   const { data } = await axios.get(`http://localhost:3001/enderecos/${cep}`);
-  console.log(data);
 
   return data;
 };

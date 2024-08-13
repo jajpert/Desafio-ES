@@ -1,7 +1,8 @@
 enum RoutesEnum {
   HOME = "/",
-  CADASTROGERAL = "/cadastro",
-  ENDERECO = "/endereco",
+  CADASTRO = "/cadastro",
+  EDITAR = "/editar",
+  VISUALIZAR = "/visualizar",
 }
 
 export default RoutesEnum;

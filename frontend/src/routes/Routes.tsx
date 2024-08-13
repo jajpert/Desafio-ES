@@ -5,8 +5,7 @@ import Route from "types/routes.types";
 import RoutesEnum from "enums/routes.enum";
 import Root from "./Root";
 
-import CadastroGeral from "pages/CadastroGeral";
-import Endereco from "pages/Endereco";
+import Cadastro from "pages/Cadastro";
 
 export const routes: Route[] = [
   {
@@ -15,14 +14,9 @@ export const routes: Route[] = [
     name: "Inicial",
   },
   {
-    path: RoutesEnum.CADASTROGERAL,
-    element: <CadastroGeral />,
-    name: "Cadastro Geral",
-  },
-  {
-    path: RoutesEnum.ENDERECO,
-    element: <Endereco />,
-    name: "Endereço",
+    path: RoutesEnum.CADASTRO,
+    element: <Cadastro />,
+    name: "Cadastro",
   },
 ];
 
