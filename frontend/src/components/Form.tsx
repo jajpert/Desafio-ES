@@ -1,20 +1,38 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TextField, Box } from "@mui/material";
 
-interface FormProps {
-  onDataChange: (data: any) => void;
+interface FormData {
+  nome: string;
+  sigla: string;
+  cnpj: string;
 }
 
-const Form: React.FC<FormProps> = ({ onDataChange }) => {
-  const [formData, setFormData] = useState({
+interface FormProps {
+  onDataChange: (data: FormData) => void;
+  formData?: FormData;
+  editable?: boolean;
+}
+
+const Form: React.FC<FormProps> = ({
+  onDataChange,
+  formData = { nome: "", sigla: "", cnpj: "" },
+  editable = true,
+}) => {
+  const [localFormData, setLocalFormData] = useState<FormData>({
     nome: "",
     sigla: "",
     cnpj: "",
   });
 
+  useEffect(() => {
+    if (formData) {
+      setLocalFormData(formData);
+    }
+  }, [formData]);
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    setFormData((prevData) => {
+    setLocalFormData((prevData) => {
       const updatedData = { ...prevData, [name]: value };
       onDataChange(updatedData);
       return updatedData;
@@ -29,25 +47,31 @@ const Form: React.FC<FormProps> = ({ onDataChange }) => {
         label="Nome"
         name="nome"
         variant="outlined"
-        value={formData.nome}
+        value={localFormData.nome}
         onChange={handleChange}
         fullWidth
+        disabled={!editable}
+        inputProps={{ maxLength: 32 }}
       />
       <TextField
         label="Sigla"
         name="sigla"
         variant="outlined"
-        value={formData.sigla}
+        value={localFormData.sigla}
         onChange={handleChange}
         fullWidth
+        disabled={!editable}
+        inputProps={{ maxLength: 8 }}
       />
       <TextField
         label="CNPJ"
         name="cnpj"
         variant="outlined"
-        value={formData.cnpj}
+        value={localFormData.cnpj}
         onChange={handleChange}
         fullWidth
+        disabled={!editable}
+        inputProps={{ maxLength: 14 }}
       />
     </Box>
   );

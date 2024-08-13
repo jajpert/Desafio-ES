@@ -11,6 +11,7 @@ rotas.get('/paises', paises.obterPaises);
 rotas.post('/cadastrarInst', instituicoes.cadastrarInst);
 rotas.patch('/editarStatusInst/:id', instituicoes.ativarInst);
 rotas.get('/instituicoes', instituicoes.obterInst);
+rotas.get('/instituicao/:id', instituicoes.buscarInst);
 rotas.put('/editarInst/:id', instituicoes.editarInst);
 
 module.exports = rotas;

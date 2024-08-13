@@ -6,6 +6,8 @@ import RoutesEnum from "enums/routes.enum";
 import Root from "./Root";
 
 import Cadastro from "pages/Cadastro";
+import Editar from "pages/Editar";
+import Visualizar from "pages/Visualizar";
 
 export const routes: Route[] = [
   {
@@ -17,6 +19,16 @@ export const routes: Route[] = [
     path: RoutesEnum.CADASTRO,
     element: <Cadastro />,
     name: "Cadastro",
+  },
+  {
+    path: RoutesEnum.EDITAR,
+    element: <Editar />,
+    name: "Editar",
+  },
+  {
+    path: RoutesEnum.VISUALIZAR,
+    element: <Visualizar />,
+    name: "Visualizar",
   },
 ];
 

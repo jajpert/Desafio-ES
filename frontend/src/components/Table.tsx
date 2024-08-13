@@ -20,14 +20,24 @@ export default function Table({ data }: BaseTable<Lista>) {
   const [tableData, setTableData] = useState<Lista[]>(data);
   const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
 
-  const handleStatusChange = async (id: number, isActive: boolean) => {
+  const [isActiveStates, setIsActiveStates] = useState(
+    data.reduce(
+      (acc, item) => {
+        acc[item.id] = item.ativo;
+        return acc;
+      },
+      {} as Record<number, boolean>,
+    ),
+  );
+
+  const handleStatusChange = async (id: number) => {
     try {
-      const updatedStatus = !isActive;
+      const currentStatus = isActiveStates[id];
+      const updatedStatus = !currentStatus;
       await axios.patch(`http://localhost:3001/editarStatusInst/${id}`, {
         ativo: updatedStatus,
       });
 
-      // Atualizar a tabela após a alteração do status
       setTableData((prevData) =>
         prevData.map((item) =>
           item.id === id ? { ...item, ativo: updatedStatus } : item,
@@ -43,6 +53,11 @@ export default function Table({ data }: BaseTable<Lista>) {
         }
         return updatedSet;
       });
+
+      setIsActiveStates((prev) => ({
+        ...prev,
+        [id]: updatedStatus,
+      }));
 
       console.log("Status atualizado com sucesso");
     } catch (error) {
@@ -71,15 +86,15 @@ export default function Table({ data }: BaseTable<Lista>) {
         accessorKey: "ativo",
         header: "Ações",
         cell: (info) => {
-          const isActive: boolean = Boolean(info.getValue());
           const id = info.row.original.id;
+          const isActive = isActiveStates[id];
 
           return (
             <div className="flex items-center">
               <div className="flex items-center gap-2">
                 {isActive ? (
                   <>
-                    <Link to={`/visualizar?id=${id}`}>
+                    <Link to={`/visualizar/id=${id}`}>
                       <VisibilityIcon
                         sx={{ color: "#5d5d5d", cursor: "pointer" }}
                       />
@@ -94,14 +109,14 @@ export default function Table({ data }: BaseTable<Lista>) {
                     </Link>
                     <BlockIcon
                       sx={{ color: "#a2051f", cursor: "pointer" }}
-                      onClick={() => handleStatusChange(id, isActive)}
+                      onClick={() => handleStatusChange(id)}
                     />
                   </>
                 ) : (
                   <Checkbox
                     sx={{ cursor: "pointer" }}
                     checked={checkedIds.has(id)}
-                    onChange={() => handleStatusChange(id, isActive)}
+                    onChange={() => handleStatusChange(id)}
                   />
                 )}
               </div>
@@ -110,7 +125,7 @@ export default function Table({ data }: BaseTable<Lista>) {
         },
       },
     ],
-    [checkedIds, tableData],
+    [checkedIds, tableData, isActiveStates],
   );
 
   const table = useReactTable({

@@ -120,7 +120,6 @@ const editarInst = async (req, res) => {
     const { nome, sigla, pais, cnpj, cep, logradouro, bairro, estado, municipio, numero, complemento } = req.body;
 
     try {
-        // Verifica se a instituição existe
         const instExistente = await knex("instituicao").where({ id }).first();
 
         if (!instExistente) {
@@ -184,7 +183,6 @@ const editarInst = async (req, res) => {
     }
 };
 
-
 const obterInst = async(req, res) => {
     try {
         const instituicoes = await knex('instituicao');
@@ -195,9 +193,24 @@ const obterInst = async(req, res) => {
     }
 }
 
+const buscarInst = async(req, res) => {
+    let { id } = req.params;
+    console.log(id);
+    
+    try {
+        const instituicao = await knex("instituicao").where({ id }).first();
+        return res.status(200).json(instituicao);
+    } catch (error) {
+        console.error('Erro ao buscar instituição:', error.message);
+        return res.status(500).json({ mensagem: "Erro interno do servidor" });
+    }
+
+}
+
 module.exports = {
     cadastrarInst,
     ativarInst,
     editarInst,
-    obterInst
+    obterInst,
+    buscarInst
 }
